@@ -1,5 +1,5 @@
 from drive_controller import DrivingController
-
+import numpy as np
 
 class DrivingClient(DrivingController):
     def __init__(self):
@@ -104,10 +104,9 @@ class DrivingClient(DrivingController):
                 set_brake = 1.0
 
         if emergency_brake:
-            if emergency_start_index > 4:
+            if np.std(sensing_info.track_forward_angles) > 25:
+                set_brake = 0.9
                 if is_emergency_direction_right:
-                    print("emergency_right")
-                    set_brake = 1.0
                     set_steering += (((self.half_road_limit / 2) / 20) * -1)
                 else:
                     set_steering += ((self.half_road_limit / 2) / 20)
@@ -125,17 +124,20 @@ class DrivingClient(DrivingController):
             obs_dist = sensing_info.track_forward_obstacles[0]['dist']
 
             val = 0
-
+            print(diff)
             if abs(obs_to_mid) < 1:
-                to_middle = -2.5
-            elif diff < 3.6:
-                val = -1 if obs_to_mid < 0 else 1
+                if to_middle > 0:
+                    to_middle = -2.5
+                else:
+                    to_middle = 2.5
+            elif abs(diff) < 3.5:
+                val = -1 if diff > 0 else 1
 
             if sensing_info.speed > 75:
                 val *= 1.7
             elif sensing_info.speed > 90:
-                val *= 2.6
-                if val > 0 and obs_dist < 30:
+                val *= 2.8
+                if val != 0 and obs_dist < 30:
                     set_brake = 1
                     set_throttle = 0.5
             to_middle += val
@@ -156,17 +158,17 @@ class DrivingClient(DrivingController):
             set_throttle = self.before_collision_throttle
 
             if sensing_info.to_middle > 0:
-                set_steering = 0.5
+                set_steering = 0.3
             else:
-                set_steering = -0.5
+                set_steering = -0.3
 
         elif self.collision_count > 0:
             self.collision_count -= 1
             set_throttle = self.before_collision_throttle
             if sensing_info.to_middle > 0:
-                set_steering = 0.5
+                set_steering = 0.3
             else:
-                set_steering = -0.5
+                set_steering = -0.3
         else:
             if sensing_info.moving_forward and abs(sensing_info.moving_angle) < 90:
                 self.before_collision_throttle = 1
@@ -187,6 +189,8 @@ class DrivingClient(DrivingController):
         print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
                                                           car_controls.brake))
         print(sensing_info.track_forward_angles)
+        print(np.std(sensing_info.track_forward_angles))
+        print(sensing_info.track_forward_obstacles)
         if self.is_debug:
             print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
 
