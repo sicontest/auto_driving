@@ -80,12 +80,17 @@ class DrivingClient(DrivingController):
 
         full_throttle = True
         emergency_brake = False
+        is_emergency_direction_right = True
+        emergency_start_index = 0
 
         for i in range(road_ran):
             f_road = abs(sensing_info.track_forward_angles[i])
             if f_road > 50:
                 full_throttle = False
+                emergency_start_index = i
             if f_road > 90:
+                if sensing_info.track_forward_angles[i] < 0:
+                    is_emergency_direction_right = False
                 emergency_brake = True
                 break
 
@@ -99,10 +104,18 @@ class DrivingClient(DrivingController):
                 set_brake = 1.0
 
         if emergency_brake:
-            if set_steering > 0:
-                set_steering = set_steering + 0.1
+            if emergency_start_index > 4:
+                if is_emergency_direction_right:
+                    print("emergency_right")
+                    set_brake = 1.0
+                    set_steering += (((self.half_road_limit / 2) / 20) * -1)
+                else:
+                    set_steering += ((self.half_road_limit / 2) / 20)
             else:
-                set_steering = set_steering - 0.1
+                if set_steering > 0:
+                    set_steering = set_steering + 0.3
+                else:
+                    set_steering = set_steering - 0.3
 
         to_middle = sensing_info.to_middle
 
