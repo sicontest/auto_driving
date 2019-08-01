@@ -317,4 +317,6 @@ if __name__ == '__main__':
                 car_controls.steering = 0.5
             else:
                 car_controls.steering = -0.5
+                
+                bjsds.kim
     """
