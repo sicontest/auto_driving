@@ -1,6 +1,7 @@
 from drive_controller import DrivingController
 import numpy as np
 
+
 class DrivingClient(DrivingController):
     def __init__(self):
         # =========================================================== #
@@ -47,7 +48,7 @@ class DrivingClient(DrivingController):
             print("=========================================================")
 
         ###########################################################################
-        #print("collided: {}".format(sensing_info.collided))
+        # print("collided: {}".format(sensing_info.collided))
         # Moving straight forward
 
         self.prev_to_middle = abs(sensing_info.to_middle)
@@ -124,12 +125,16 @@ class DrivingClient(DrivingController):
             obs_dist = sensing_info.track_forward_obstacles[0]['dist']
 
             val = 0
-            print(diff)
-            if abs(obs_to_mid) < 1:
+            #print(diff)
+            if abs(obs_to_mid) < 1.5:
                 if to_middle > 0:
-                    to_middle = -2.5
+                    print("1")
+                    print(obs_to_mid)
+                    to_middle = 0.5
                 else:
-                    to_middle = 2.5
+                    to_middle = -0.5
+                    print("2")
+                    print(obs_to_mid)
             elif abs(diff) < 3.5:
                 val = -1 if diff > 0 else 1
 
@@ -147,7 +152,6 @@ class DrivingClient(DrivingController):
 
             final_str = str_val + str_val2
             if final_str > 1:
-
                 final_str = 1
 
             set_steering = final_str
@@ -186,19 +190,18 @@ class DrivingClient(DrivingController):
         car_controls.throttle = set_throttle
         car_controls.brake = set_brake
 
-        print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
-                                                          car_controls.brake))
-        print(sensing_info.track_forward_angles)
-        print(np.std(sensing_info.track_forward_angles))
-        print(sensing_info.track_forward_obstacles)
+        #print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
+        #print(sensing_info.track_forward_angles)
+        #print(np.std(sensing_info.track_forward_angles))
+        #print(sensing_info.track_forward_obstacles)
         if self.is_debug:
-            print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
+            print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
+                                                              car_controls.brake))
 
         #
         # Editing area ends
         # ==========================================================#
         return car_controls
-
 
     # ============================
     # If you have NOT changed the <settings.json> file
@@ -228,6 +231,7 @@ class DrivingClient(DrivingController):
         if to_middle > 0:
             steering *= -1
         return steering
+
 
 if __name__ == '__main__':
     client = DrivingClient()
@@ -321,6 +325,6 @@ if __name__ == '__main__':
                 car_controls.steering = 0.5
             else:
                 car_controls.steering = -0.5
-                
+
                 bjsds.kim
     """
