@@ -71,6 +71,18 @@ class DrivingClient(DrivingController):
 
         self.set_steering = self.steering_by_angle + self.steering_by_middle
 
+        if abs(sensing_info.to_middle) > (self.half_road_limit-2):
+            if self.set_steering > 0:
+                if sensing_info.to_middle < 0:
+                    self.set_steering += 0.1
+                else:
+                    self.set_steering += -0.1
+            else:
+                if sensing_info.to_middle < 0:
+                    self.set_steering += -0.1
+                else:
+                    self.set_steering += 0.1
+
         if abs(self.set_steering) > 1:
             if self.set_steering > 0:
                 self.set_steering = 1
@@ -140,7 +152,13 @@ class DrivingClient(DrivingController):
         ang = 120
         ang_num = 1
 
-        if sensing_info.speed > 110:
+        if sensing_info.speed > 140:
+            road_ran = 10
+            ang = 75
+            ang_num = 4
+            if not self.full_throttling:
+                ang_num = 3
+        elif sensing_info.speed > 110:
             road_ran = 9
             ang = 85
             ang_num = 3
@@ -190,11 +208,13 @@ class DrivingClient(DrivingController):
 
         if emergency_brake:
             if np.std(sensing_info.track_forward_angles) > 25:
-                self.set_brake = 0.9
+                self.set_brake = 0.6
+                """
                 if is_emergency_direction_right:
                     self.steering_by_angle += (((self.half_road_limit / 2) / 20) * -1)
                 else:
                     self.steering_by_angle += ((self.half_road_limit / 2) / 20)
+                """
             else:
                 if self.set_steering > 0:
                     self.steering_by_angle = self.steering_by_angle + 0.3
