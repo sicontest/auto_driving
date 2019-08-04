@@ -111,10 +111,10 @@ class DrivingClient(DrivingController):
         car_controls.throttle = self.set_throttle
         car_controls.brake = self.set_brake
 
-        print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
-        print(sensing_info.track_forward_angles)
-        print(np.std(sensing_info.track_forward_angles))
-        print(sensing_info.track_forward_obstacles)
+        #print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
+        #print(sensing_info.track_forward_angles)
+        #print(np.std(sensing_info.track_forward_angles))
+        #print(sensing_info.track_forward_obstacles)
         if self.is_debug:
             print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
                                                               car_controls.brake))
@@ -208,18 +208,29 @@ class DrivingClient(DrivingController):
         obs_dist = sensing_info.track_forward_obstacles[0]['dist']
 
         val = 0
-        # print(diff)
-        if abs(obs_to_mid) < 1.5:
-            if to_middle > 0:
-                # print("1")
-                # print(obs_to_mid)
-                to_middle = -1.0
-            else:
-                to_middle = 1.0
-                # print("2")
-                # print(obs_to_mid)
-        elif abs(diff) < 3.5:
-            val = -1 if diff > 0 else 1
+        if abs(diff) < 3.5:
+            if abs(obs_to_mid) < 1.5:
+                if to_middle > 0:
+                    to_middle = -1.0
+                else:
+                    to_middle = 1.0
+            else :
+                val = -1 if diff > 0 else 1
+
+        # 두번째 장애물이 중간에 위치하며, 차량도 중간을 달리고있을때
+        if len(sensing_info.track_forward_obstacles) > 1:
+            second_to_middle = sensing_info.to_middle
+            second_obs_to_mid = sensing_info.track_forward_obstacles[1]['to_middle']
+            second_diff = (second_to_middle - second_obs_to_mid)
+            second_obs_dist = sensing_info.track_forward_obstacles[1]['dist'] - sensing_info.track_forward_obstacles[0]['dist']
+
+            if abs(second_diff) < 3.5 and abs(second_obs_to_mid) < 1.5 and second_obs_dist < 30:
+                #print("111")
+                if second_to_middle > 0:
+                    to_middle = -3.0
+                else:
+                    to_middle = 3.0
+
 
         if sensing_info.speed > 90 and abs(diff) < 2 and obs_dist < 30:
             #val *= 2.8
