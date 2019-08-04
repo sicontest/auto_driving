@@ -169,6 +169,7 @@ class DrivingClient(DrivingController):
 
         for i in range(road_ran):
             f_road = abs(sensing_info.track_forward_angles[i])
+            #print(f_road)
             if f_road > 50:
                 full_throttle = False
                 emergency_start_index = i
@@ -185,7 +186,7 @@ class DrivingClient(DrivingController):
             if sensing_info.speed > 130:
                 self.set_throttle = 0.5
             if sensing_info.speed > 120:
-                self.set_brake = 1.0
+                self.set_brake = 0.3
 
         if emergency_brake:
             if np.std(sensing_info.track_forward_angles) > 25:
@@ -231,6 +232,18 @@ class DrivingClient(DrivingController):
                 else:
                     to_middle = 3.0
 
+        if not self.full_throttling:
+            #print(obs_dist)
+            if sensing_info.speed > 70:
+                self.set_throttle = 0
+                #print("1")
+            if sensing_info.speed > 60:
+                self.set_brake = 1
+                #print("2")
+
+        if self.emergency_braking:
+            self.set_brake = 1
+            self.set_throttle = 0
 
         if sensing_info.speed > 90 and abs(diff) < 2 and obs_dist < 30:
             #val *= 2.8
