@@ -212,11 +212,26 @@ class DrivingClient(DrivingController):
         if abs(diff) < 3.5:
             if abs(obs_to_mid) < 1.5:
                 if to_middle > 0:
-                    to_middle = -1.0
+                    to_middle = -0.5
                 else:
-                    to_middle = 1.0
-            else :
+                    to_middle = 0.5
+            else:
                 val = -1 if diff > 0 else 1
+        else: # 현재 주행상 부딪히지 않으면서
+            if abs(obs_to_mid) > 3.0: # 장애물의 위치가 중앙이 아닌 경우에만 감속
+                #print("주행 경로 아님, 장애물 중앙 아님")
+                if not self.full_throttling:
+                    # print(obs_dist)
+                    if sensing_info.speed > 60:
+                        self.set_throttle = 0
+                        #print("1")
+                    if sensing_info.speed > 50:
+                        self.set_brake = 1
+                        #print("2")
+                elif self.emergency_braking:
+                        #print("3")
+                        self.set_brake = 1
+                        self.set_throttle = 0
 
         # 두번째 장애물이 중간에 위치하며, 차량도 중간을 달리고있을때
         if len(sensing_info.track_forward_obstacles) > 1:
@@ -224,26 +239,12 @@ class DrivingClient(DrivingController):
             second_obs_to_mid = sensing_info.track_forward_obstacles[1]['to_middle']
             second_diff = (second_to_middle - second_obs_to_mid)
             second_obs_dist = sensing_info.track_forward_obstacles[1]['dist'] - sensing_info.track_forward_obstacles[0]['dist']
-
             if abs(second_diff) < 3.5 and abs(second_obs_to_mid) < 1.5 and second_obs_dist < 30:
                 #print("111")
                 if second_to_middle > 0:
                     to_middle = -3.0
                 else:
                     to_middle = 3.0
-
-        if not self.full_throttling:
-            #print(obs_dist)
-            if sensing_info.speed > 70:
-                self.set_throttle = 0
-                #print("1")
-            if sensing_info.speed > 60:
-                self.set_brake = 1
-                #print("2")
-
-        if self.emergency_braking:
-            self.set_brake = 1
-            self.set_throttle = 0
 
         if sensing_info.speed > 90 and abs(diff) < 2 and obs_dist < 30:
             #val *= 2.8
