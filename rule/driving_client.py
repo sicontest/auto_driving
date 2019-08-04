@@ -231,10 +231,30 @@ class DrivingClient(DrivingController):
         val = 0
         if abs(diff) < 3.5:
             if abs(obs_to_mid) < 1.5:
-                if to_middle > 0:
-                    to_middle = -0.5
+                # 장애물을 만남. 근데 코너링 중임
+                before_obs_angle = np.mean(sensing_info.track_forward_angles[0:3]) # 장애물 인식을 40m 시점 기준
+                print(before_obs_angle)
+                if abs(before_obs_angle) > 20 and obs_dist > 10:
+                    if before_obs_angle > 0:
+                        if to_middle > 0:
+                            to_middle = -2.0 # 오른쪽으로 코너링
+                            print("1")
+                        else:
+                            to_middle = 3.0 # 왼쪽으로 코너링
+                            print("2")
+                    else:
+                        if to_middle > 0:
+                            to_middle = -3.0 # 오른쪽으로 코너링
+                            print("3")
+                        else:
+                            to_middle = 2.0 # 왼쪽으로 코너링
+                            print("4")
                 else:
-                    to_middle = 0.5
+                    if to_middle > 0:
+                        to_middle = -1.0
+                    else:
+                        to_middle = 1.0
+
             else:
                 val = -1 if diff > 0 else 1
         else: # 현재 주행상 부딪히지 않으면서
