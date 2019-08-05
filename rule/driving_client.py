@@ -209,9 +209,9 @@ class DrivingClient(DrivingController):
                 self.set_throttle = 0.5
             if sensing_info.speed > 120:
                 self.set_brake = 0.3
-            if np.std(sensing_info.track_forward_angles) > 30 and (not emergency_brake):
-                self.marina_emergency = True
-                self.set_brake = 0.9
+            #if np.std(sensing_info.track_forward_angles) > 30 and (not emergency_brake):
+            #    self.marina_emergency = True
+            #    self.set_brake = 0.9
 
         if emergency_brake:
             if np.std(sensing_info.track_forward_angles) > 25:

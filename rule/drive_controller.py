@@ -506,6 +506,7 @@ class DrivingUtil:
                     if dist <= 100:
                         track_obstacles.append({"dist": dist, "to_middle": round(obs[3], 2)})
 
+        track_obstacles = sorted(track_obstacles, key=lambda obs: obs["dist"])
         return track_obstacles
 
     def get_range_indexes_array(self, from_index, to_index, max_index):
