@@ -337,8 +337,7 @@ class DrivingClient(DrivingController):
             second_to_middle = sensing_info.to_middle
             second_obs_to_mid = sensing_info.track_forward_obstacles[1]['to_middle']
             second_diff = (second_to_middle - second_obs_to_mid)
-            second_obs_dist = sensing_info.track_forward_obstacles[1]['dist'] - sensing_info.track_forward_obstacles[0][
-                'dist']
+            second_obs_dist = sensing_info.track_forward_obstacles[1]['dist'] - sensing_info.track_forward_obstacles[0]['dist']
             if abs(second_diff) < 3.5 and abs(second_obs_to_mid) < 1.5 and second_obs_dist < 30:
                 # print("111")
                 if second_to_middle > 0:
