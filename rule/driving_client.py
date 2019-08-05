@@ -94,17 +94,19 @@ class DrivingClient(DrivingController):
             self.collision_count = 5
             self.before_collision_throttle *= -1
             self.set_throttle = self.before_collision_throttle
+            self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.0
+                self.set_steering = 0.8
             else:
-                self.set_steering = -0.0
+                self.set_steering = -0.8
         elif self.collision_count > 0:
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
+            self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.0
+                self.set_steering = 0.8
             else:
-                self.set_steering = -0.0
+                self.set_steering = -0.8
         else:
             if sensing_info.moving_forward and abs(sensing_info.moving_angle) < 90:
                 self.before_collision_throttle = 1
@@ -130,7 +132,6 @@ class DrivingClient(DrivingController):
         if self.is_debug:
             print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
                                                               car_controls.brake))
-
         #
         # Editing area ends
         # ==========================================================#
@@ -176,8 +177,8 @@ class DrivingClient(DrivingController):
         # set_throttle = 1.0
         # set_brake = 0.0
 
-        if self.marina_emergency:
-            ang_num += 4
+        #if self.marina_emergency:
+        #    ang_num += 2
 
         self.steering_by_angle = (sensing_info.track_forward_angles[ang_num] - sensing_info.moving_angle) / ang
         self.steering_by_middle = (sensing_info.to_middle / 50) * -1
@@ -193,7 +194,6 @@ class DrivingClient(DrivingController):
             #print(f_road)
             if f_road > 50:
                 full_throttle = False
-                emergency_start_index = i
             if f_road > 90:
                 if sensing_info.track_forward_angles[i] < 0:
                     is_emergency_direction_right = False
@@ -204,17 +204,24 @@ class DrivingClient(DrivingController):
         self.emergency_braking = emergency_brake
         self.marina_emergency = False
 
+        absolute_angles = np.absolute(sensing_info.track_forward_angles)
+
         if not full_throttle:
             if sensing_info.speed > 130:
                 self.set_throttle = 0.5
             if sensing_info.speed > 120:
                 self.set_brake = 0.3
-            #if np.std(sensing_info.track_forward_angles) > 30 and (not emergency_brake):
-            #    self.marina_emergency = True
-            #    self.set_brake = 0.9
+            if np.std(sensing_info.track_forward_angles) > 28 and np.max(absolute_angles) < 90:
+                self.marina_emergency = True
+                self.set_brake = 1.0
+                self.set_throttle = 0.2
+                if np.max(sensing_info.track_forward_angles) > 50:
+                    self.steering_by_angle = self.steering_by_angle + 0.2
+                else:
+                    self.steering_by_angle = self.steering_by_angle - 0.2
 
         if emergency_brake:
-            if np.std(sensing_info.track_forward_angles) > 25:
+            if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 50:
                 self.set_brake = 0.6
                 """
                 if is_emergency_direction_right:
