@@ -107,17 +107,29 @@ class DrivingClient(DrivingController):
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = 0.8
+                else:
+                    self.set_steering = -0.8
             else:
-                self.set_steering = -0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = -0.8
+                else:
+                    self.set_steering = 0.8
         elif self.collision_count > 0:
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = 0.8
+                else:
+                    self.set_steering = -0.8
             else:
-                self.set_steering = -0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = -0.8
+                else:
+                    self.set_steering = 0.8
         else:
             if sensing_info.moving_forward and abs(sensing_info.moving_angle) < 90:
                 self.before_collision_throttle = 1
@@ -233,9 +245,9 @@ class DrivingClient(DrivingController):
                 self.set_brake = 1.0
                 self.set_throttle = 0.2
                 if np.max(sensing_info.track_forward_angles) > 50:
-                    self.steering_by_angle = self.steering_by_angle + 0.2
+                    self.steering_by_angle = self.steering_by_angle + 0.1
                 else:
-                    self.steering_by_angle = self.steering_by_angle - 0.2
+                    self.steering_by_angle = self.steering_by_angle - 0.1
 
         if emergency_brake:
             if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 30:
@@ -261,7 +273,7 @@ class DrivingClient(DrivingController):
         target_selected = False
         target = 0.0
 
-        if abs(diff) < 4:
+        if abs(diff) < 4 or abs(obs_to_mid) < 2:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
             print("target to be selected")
             for i in range(2):
