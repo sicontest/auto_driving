@@ -25,6 +25,8 @@ class DrivingClient(DrivingController):
 
         self.steering_by_middle = 0.0
         self.steering_by_angle = 0.0
+
+        self.is_opponent_close = False
         #
         # Editing area ends
         # ==========================================================#
@@ -68,7 +70,7 @@ class DrivingClient(DrivingController):
         self.set_steering_with_no_obstacles(sensing_info)
 
         if sensing_info.speed > 100:
-            dist = 70
+            dist = 80
         else:
             dist = 50
         if len(sensing_info.track_forward_obstacles) > 0 and sensing_info.track_forward_obstacles[0]['dist'] < dist:
@@ -94,23 +96,40 @@ class DrivingClient(DrivingController):
             else:
                 self.set_steering = -1
 
-        if sensing_info.collided and self.collision_count == 0:
+        if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 4:
+            self.is_opponent_close = True
+        else:
+            self.is_opponent_close = False
+
+        if sensing_info.collided and self.collision_count == 0 and (not self.is_opponent_close):
             self.collision_count = 5
             self.before_collision_throttle *= -1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = 0.8
+                else:
+                    self.set_steering = -0.8
             else:
-                self.set_steering = -0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = -0.8
+                else:
+                    self.set_steering = 0.8
         elif self.collision_count > 0:
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
             if sensing_info.to_middle > 0:
-                self.set_steering = 0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = 0.8
+                else:
+                    self.set_steering = -0.8
             else:
-                self.set_steering = -0.8
+                if sensing_info.moving_angle > 0:
+                    self.set_steering = -0.8
+                else:
+                    self.set_steering = 0.8
         else:
             if sensing_info.moving_forward and abs(sensing_info.moving_angle) < 90:
                 self.before_collision_throttle = 1
@@ -128,11 +147,11 @@ class DrivingClient(DrivingController):
         car_controls.throttle = self.set_throttle
         car_controls.brake = self.set_brake
 
-        # print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
-        # print(sensing_info.track_forward_angles)
-        # print(np.std(sensing_info.track_forward_angles))
-        # print(sensing_info.speed)
-        # print(sensing_info.track_forward_obstacles)
+        print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
+        #print(sensing_info.track_forward_angles)
+        #print(np.std(sensing_info.track_forward_angles))
+        #print(sensing_info.speed)
+        print(sensing_info.track_forward_obstacles)
         if self.is_debug:
             print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
                                                               car_controls.brake))
@@ -198,7 +217,7 @@ class DrivingClient(DrivingController):
             # print(f_road)
             if f_road > 50:
                 full_throttle = False
-            if f_road > 90:
+            if f_road > 89:
                 if sensing_info.track_forward_angles[i] < 0:
                     is_emergency_direction_right = False
                 emergency_brake = True
@@ -215,17 +234,23 @@ class DrivingClient(DrivingController):
                 self.set_throttle = 0.5
             if sensing_info.speed > 120:
                 self.set_brake = 0.3
-            if np.std(sensing_info.track_forward_angles) > 28 and np.max(absolute_angles) < 90:
+            """
+            if np.max(sensing_info.track_forward_angles) > 50:
+                self.steering_by_middle = ((sensing_info.to_middle-(self.half_road_limit/5)) / 50) * -1
+            else:
+                self.steering_by_middle = ((sensing_info.to_middle+(self.half_road_limit/5)) / 50) * -1
+            """
+            if np.std(sensing_info.track_forward_angles) > 28 and 90 > np.max(absolute_angles) and sensing_info.speed > 30:
                 self.marina_emergency = True
                 self.set_brake = 1.0
                 self.set_throttle = 0.2
                 if np.max(sensing_info.track_forward_angles) > 50:
-                    self.steering_by_angle = self.steering_by_angle + 0.2
+                    self.steering_by_angle = self.steering_by_angle + 0.1
                 else:
-                    self.steering_by_angle = self.steering_by_angle - 0.2
+                    self.steering_by_angle = self.steering_by_angle - 0.1
 
         if emergency_brake:
-            if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 50:
+            if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 30:
                 self.set_brake = 0.6
                 """
                 if is_emergency_direction_right:
@@ -234,7 +259,7 @@ class DrivingClient(DrivingController):
                     self.steering_by_angle += ((self.half_road_limit / 2) / 20)
                 """
             else:
-                if self.set_steering > 0:
+                if np.max(sensing_info.track_forward_angles) > 50:
                     self.steering_by_angle = self.steering_by_angle + 0.3
                 else:
                     self.steering_by_angle = self.steering_by_angle - 0.3
@@ -245,7 +270,97 @@ class DrivingClient(DrivingController):
         obs_to_mid = sensing_info.track_forward_obstacles[0]['to_middle']
         diff = (to_middle - obs_to_mid)
         obs_dist = sensing_info.track_forward_obstacles[0]['dist']
+        target_selected = False
+        target = 0.0
 
+        if abs(diff) < 4 or abs(obs_to_mid) < 2:
+            to_be_target = [obs_to_mid-5, obs_to_mid+5]
+            print("target to be selected")
+            for i in range(2):
+                if abs(to_be_target[i]) > (self.half_road_limit-1.25):
+                    target = to_be_target[1-i]
+                    target_selected = True
+                    break
+            
+            if not target_selected:
+                if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 5:
+                    opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
+                    if abs(to_be_target[0]-opponent_tomiddle) < abs(to_be_target[1]-opponent_tomiddle):
+                        target = to_be_target[0]
+                        target_selected = True
+                    else:
+                        target = to_be_target[1]
+                        target_selected = True
+
+            if not target_selected:
+                if len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
+                    if abs(to_be_target[0] - sensing_info.track_forward_obstacles[1]['to_middle']) < abs(to_be_target[1] - sensing_info.track_forward_obstacles[1]['to_middle']):
+                        target = to_be_target[0]
+                        target_selected = True
+                    else:
+                        target = to_be_target[1]
+                        target_selected = True
+
+            if not target_selected:
+                if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
+                    target = to_be_target[0]
+                    target_selected = True
+                else:
+                    target = to_be_target[1]
+                    target_selected = True
+
+        elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 5:
+            second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
+            if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
+                to_be_target = [second_obs_tomiddle - 5, second_obs_tomiddle + 5]
+
+                for i in range(2):
+                    if abs(to_be_target[i]) > (self.half_road_limit - 1.25):
+                        target = to_be_target[1 - i]
+                        target_selected = True
+                        break
+                    if (to_be_target[i] - second_obs_tomiddle) * (sensing_info.track_forward_obstacles[0]['to_middle'] - second_obs_tomiddle) > 0:
+                        if abs((to_be_target[i] - second_obs_tomiddle)) > abs(sensing_info.track_forward_obstacles[0]['to_middle'] - second_obs_tomiddle):
+                            target = to_be_target[1 - i]
+                            target_selected = True
+                            break
+
+                if not target_selected:
+                    if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 5:
+                        opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
+                        if abs(to_be_target[0] - opponent_tomiddle) < abs(to_be_target[1] - opponent_tomiddle):
+                            target = to_be_target[0]
+                            target_selected = True
+                        else:
+                            target = to_be_target[1]
+                            target_selected = True
+
+                if not target_selected:
+                    if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
+                        target = to_be_target[0]
+                        target_selected = True
+                    else:
+                        target = to_be_target[1]
+                        target_selected = True
+
+        if target_selected:
+            print("Target!! : {}".format(target))
+            self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle - target), 4)
+            self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
+
+            if sensing_info.speed > 100:
+                target *= 1.7
+
+            if sensing_info.speed > 80:
+                self.set_brake = 0.5
+
+        if obs_dist < 30 and abs(obs_to_mid - to_middle) < 3:
+            if sensing_info.speed > 100:
+                self.set_brake = 1.0
+            elif sensing_info.speed > 50:
+                self.set_brake = 0.5
+            
+        """
         val = 0
         if abs(diff) < 3.5:
             # print("111111111111")
@@ -362,10 +477,11 @@ class DrivingClient(DrivingController):
             val *= 1.7
 
         to_middle += val
+        
 
         self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle), 4)
         self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
-
+        """
     def steer_by_forward_road(self, sensing_info):
         return (sensing_info.track_forward_angles[0] - sensing_info.moving_angle) / 60
 
