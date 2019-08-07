@@ -70,7 +70,7 @@ class DrivingClient(DrivingController):
         self.set_steering_with_no_obstacles(sensing_info)
 
         if sensing_info.speed > 100:
-            dist = 50
+            dist = 80
         else:
             dist = 50
         if len(sensing_info.track_forward_obstacles) > 0 and sensing_info.track_forward_obstacles[0]['dist'] < dist:
@@ -261,7 +261,7 @@ class DrivingClient(DrivingController):
         target_selected = False
         target = 0.0
 
-        if abs(diff) < 4.0:
+        if abs(diff) < 4:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
             print("target to be selected")
             for i in range(2):
@@ -338,6 +338,9 @@ class DrivingClient(DrivingController):
 
             if sensing_info.speed > 100:
                 target *= 1.7
+
+            if sensing_info.speed > 80:
+                self.set_brake = 0.5
 
         if obs_dist < 30 and abs(obs_to_mid - to_middle) < 3:
             if sensing_info.speed > 100:
