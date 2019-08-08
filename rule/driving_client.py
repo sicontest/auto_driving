@@ -19,6 +19,8 @@ class DrivingClient(DrivingController):
         self.emergency_braking = False
         self.marina_emergency = False
 
+        self.is_like_rect = False
+
         self.set_steering = 0.0
         self.set_throttle = 1.0
         self.set_brake = 0.0
@@ -96,12 +98,12 @@ class DrivingClient(DrivingController):
             else:
                 self.set_steering = -1
 
-        if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 4:
+        if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 4:
             self.is_opponent_close = True
         else:
             self.is_opponent_close = False
 
-        if sensing_info.collided and self.collision_count == 0 and (not self.is_opponent_close):
+        if sensing_info.collided and self.collision_count == 0 and (not self.is_opponent_close or sensing_info.speed < 10):
             self.collision_count = 5
             self.before_collision_throttle *= -1
             self.set_throttle = self.before_collision_throttle
@@ -147,11 +149,11 @@ class DrivingClient(DrivingController):
         car_controls.throttle = self.set_throttle
         car_controls.brake = self.set_brake
 
-        print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
+        #print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
         #print(sensing_info.track_forward_angles)
         #print(np.std(sensing_info.track_forward_angles))
         #print(sensing_info.speed)
-        print(sensing_info.track_forward_obstacles)
+        #print(sensing_info.track_forward_obstacles)
         if self.is_debug:
             print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle,
                                                               car_controls.brake))
@@ -168,7 +170,7 @@ class DrivingClient(DrivingController):
     # ===> player_name = "My car name" (specified in the json file)  ex) Car1
     # ============================
     def set_player_name(self):
-        player_name = ""
+        player_name = "Car1"
         return player_name
 
     def set_steering_with_no_obstacles(self, sensing_info):
@@ -223,6 +225,13 @@ class DrivingClient(DrivingController):
                 emergency_brake = True
                 break
 
+        self.is_like_rect = False
+
+        for i in range(1, 10):
+            if abs(sensing_info.track_forward_angles[i] - sensing_info.track_forward_angles[i-1]) > 30:
+                self.is_like_rect = True
+                break
+
         self.full_throttling = full_throttle
         self.emergency_braking = emergency_brake
         self.marina_emergency = False
@@ -264,6 +273,13 @@ class DrivingClient(DrivingController):
                 else:
                     self.steering_by_angle = self.steering_by_angle - 0.3
 
+        if self.is_like_rect and (not emergency_brake):
+            print("is lect")
+            print(sensing_info.track_forward_angles)
+            if sensing_info.speed > 90:
+                self.set_brake = 1.0
+                self.set_throttle = 0.2
+
     def set_steering_with_obstacles(self, sensing_info):
         to_middle = sensing_info.to_middle
 
@@ -283,7 +299,7 @@ class DrivingClient(DrivingController):
                     break
             
             if not target_selected:
-                if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 5:
+                if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 5:
                     opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
                     if abs(to_be_target[0]-opponent_tomiddle) < abs(to_be_target[1]-opponent_tomiddle):
                         target = to_be_target[0]
@@ -326,7 +342,7 @@ class DrivingClient(DrivingController):
                             break
 
                 if not target_selected:
-                    if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] > 5:
+                    if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 5:
                         opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
                         if abs(to_be_target[0] - opponent_tomiddle) < abs(to_be_target[1] - opponent_tomiddle):
                             target = to_be_target[0]
