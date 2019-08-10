@@ -259,7 +259,7 @@ class DrivingClient(DrivingController):
             else:
                 self.steering_by_middle = ((sensing_info.to_middle+(self.half_road_limit/5)) / 50) * -1
             """
-
+            """
             if np.std(sensing_info.track_forward_angles) > 28 and 90 > np.max(absolute_angles) and sensing_info.speed > 30:
                 self.marina_emergency = True
                 self.set_brake = 1.0
@@ -268,7 +268,7 @@ class DrivingClient(DrivingController):
                     self.steering_by_angle = self.steering_by_angle + 0.1
                 else:
                     self.steering_by_angle = self.steering_by_angle - 0.1
-
+            """
         if emergency_brake:
             if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 30:
                 self.set_brake = 0.6
