@@ -2,6 +2,7 @@ from numba import prange
 
 from drive_controller import DrivingController
 import numpy as np
+import math
 
 
 class DrivingClient(DrivingController):
@@ -349,7 +350,7 @@ class DrivingClient(DrivingController):
         elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
             second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
             if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
-                print("obstacles > 1 and obs_dist < 30")
+                #print("obstacles > 1 and obs_dist < 30")
                 to_be_target = [second_obs_tomiddle - 5, second_obs_tomiddle + 5]
 
                 for i in range(2):
@@ -382,6 +383,7 @@ class DrivingClient(DrivingController):
                         target_selected = True
 
 
+
         if obs_dist < 40 and abs(obs_to_mid - to_middle) < 2.5:
             """
             if sensing_info.speed > 70:
@@ -396,7 +398,7 @@ class DrivingClient(DrivingController):
             if sensing_info.speed > 70:
                 #print("2---")
                 self.set_throttle = 0.0
-
+            """
             to_obs_angle = 0.0
             if obs_dist < 10:
                 to_obs_angle = sensing_info.track_forward_angles[0]
@@ -411,16 +413,53 @@ class DrivingClient(DrivingController):
                 check_car_moving_angle = 5
             else:
                 check_car_moving_angle = 3
-
-            if abs(sensing_info.moving_angle) < check_car_moving_angle and to_obs_angle < 3: # 마리나 장애물 회피 검증 필요
+            
+            if abs(sensing_info.moving_angle) < check_car_moving_angle and to_obs_angle < 3:
                 if sensing_info.speed < 50:
                     target *= 1.5
-                    print("4---")
+                    #print("4---")
                 else:
                     target *= 1.3
-                    print("5---")
+                    #print("5---")
+            """
+            car_obs_angle = 90.0 - (math.atan(obs_dist / abs(diff)) * 180 / math.pi)
+            if diff < 0:
+                car_obs_angle *= -1.0
+            """
+            print("obs dist : ")
+            print(sensing_info.track_forward_obstacles[0]['dist'])
+            if len(sensing_info.track_forward_obstacles) > 1:
+                print("obs2 dist : ")
+                print(sensing_info.track_forward_obstacles[1]['dist'])
+            print("temp : ")
+            print(temp)
+            print("moving_angle : ")
+            print(sensing_info.moving_angle)
+            """
+            forward_angle_cnt = sensing_info.track_forward_obstacles[0]['dist']
+            forward_angle_cnt /= 10.0
+            forward_angle_cnt = int(forward_angle_cnt)
+            obs_foward_angle = 0.0
+            if forward_angle_cnt > 0:
+                obs_foward_angle = np.std(sensing_info.track_forward_angles[0:forward_angle_cnt])
+            else:
+                obs_foward_angle = sensing_info.track_forward_angles[0]
+
+            car_obs_angle -= sensing_info.moving_angle
+            print("car_obs_angle : ")
+            print(car_obs_angle)
+            print("obs_foward_angle : ")
+            print(obs_foward_angle)
+            if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
+                if sensing_info.speed < 50:
+                    target *= 10.0
+                    #print("4---")
+                else:
+                    target *= 4.0
+                    #print("5---")
+
         elif sensing_info.speed > 120:
-            print("6---")
+            #print("6---")
             target *= 0.7
 
 
