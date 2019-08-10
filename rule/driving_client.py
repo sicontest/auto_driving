@@ -300,18 +300,17 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
-
+            """
             if not target_selected:
                 if len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
-                    second_obs_to_mid = sensing_info.track_forward_obstacles[1]['to_middle']
-                    if second_obs_to_mid < 2:
-                        second_to_be_target = [second_obs_to_mid - 5, second_obs_to_mid + 5]
-                        if abs(second_to_be_target[0] - sensing_info.track_forward_obstacles[1]['to_middle']) < abs(second_to_be_target[1] - sensing_info.track_forward_obstacles[1]['to_middle']):
-                            target = second_to_be_target[0] + 3
-                            target_selected = True
-                        else:
-                            target = second_to_be_target[1] - 3
-                            target_selected = True
+                    if abs(to_be_target[0] - sensing_info.track_forward_obstacles[1]['to_middle']) < abs(to_be_target[1] - sensing_info.track_forward_obstacles[1]['to_middle']):
+                        target = to_be_target[0]
+                        target_selected = True
+                    else:
+                        target = to_be_target[1]
+                        target_selected = True
+            """
+
 
             if not target_selected:
                 if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
