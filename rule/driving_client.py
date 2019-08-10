@@ -148,6 +148,10 @@ class DrivingClient(DrivingController):
         if not sensing_info.moving_forward and self.collision_count == 0 and sensing_info.speed > 0:
             self.set_steering = -1.0
 
+        if sensing_info.speed > 140:
+            self.set_throttle = 0.2
+            self.set_brake = 0.5
+
         car_controls.steering = self.set_steering
         car_controls.throttle = self.set_throttle
         car_controls.brake = self.set_brake
