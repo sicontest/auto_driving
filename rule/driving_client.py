@@ -287,9 +287,9 @@ class DrivingClient(DrivingController):
         ang_diffs_std = np.std(ang_diffs)
         #print(ang_diffs_std)
         if self.is_like_rect and (not emergency_brake) and ((120 > np.max(absolute_angles) > 84 and ang_diffs_std > 9.5) or ang_diffs_std > 13):
-            print("is lect")
-            print(sensing_info.track_forward_angles)
-            print(np.std(ang_diffs))
+            #print("is lect")
+            #print(sensing_info.track_forward_angles)
+            #print(np.std(ang_diffs))
             if sensing_info.speed > 120:
                 self.set_brake = 1.0
                 self.set_throttle = 0.0
@@ -310,7 +310,7 @@ class DrivingClient(DrivingController):
         if abs(diff) < 4 or abs(obs_to_mid) < 2:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
 
-            print("target to be selected")
+            #print("target to be selected")
             """
             for i in range(2):
                 if abs(to_be_target[i]) > (self.half_road_limit-1.25):
@@ -349,6 +349,7 @@ class DrivingClient(DrivingController):
         elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
             second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
             if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
+                print("obstacles > 1 and obs_dist < 30")
                 to_be_target = [second_obs_tomiddle - 5, second_obs_tomiddle + 5]
 
                 for i in range(2):
@@ -380,18 +381,21 @@ class DrivingClient(DrivingController):
                         target = to_be_target[1]
                         target_selected = True
 
-        if sensing_info.speed > 120 and obs_dist > 50:
-            target *= 1.5
 
         if obs_dist < 40 and abs(obs_to_mid - to_middle) < 2.5:
+            """
             if sensing_info.speed > 70:
-                print("2---")
+                #print("2---")
                 self.set_brake = 0.5
             if sensing_info.speed > 120:
                 print("3---")
-                target *= 1.5
+                #target *= 1.5
                 self.set_brake = 1.0
                 self.set_throttle = 0.5
+            """
+            if sensing_info.speed > 70:
+                #print("2---")
+                self.set_throttle = 0.0
 
             to_obs_angle = 0.0
             if obs_dist < 10:
@@ -410,11 +414,14 @@ class DrivingClient(DrivingController):
 
             if abs(sensing_info.moving_angle) < check_car_moving_angle and to_obs_angle < 3: # 마리나 장애물 회피 검증 필요
                 if sensing_info.speed < 50:
-                    target *= 2.0
+                    target *= 1.5
                     print("4---")
                 else:
-                    target *= 1.5
+                    target *= 1.3
                     print("5---")
+        elif sensing_info.speed > 120:
+            print("6---")
+            target *= 0.7
 
 
         if target_selected:
