@@ -118,7 +118,7 @@ class DrivingClient(DrivingController):
                     self.set_steering = -0.8
                 else:
                     self.set_steering = 0.8
-        elif self.collision_count > 0:
+        elif self.collision_count > 0 and sensing_info.speed < 10:
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
@@ -133,6 +133,7 @@ class DrivingClient(DrivingController):
                 else:
                     self.set_steering = 0.8
         else:
+            self.collision_count = 0
             if sensing_info.moving_forward and abs(sensing_info.moving_angle) < 90:
                 self.before_collision_throttle = 1
             elif sensing_info.moving_forward and abs(sensing_info.moving_angle) >= 90:
@@ -142,7 +143,7 @@ class DrivingClient(DrivingController):
             else:
                 self.before_collision_throttle = 1
 
-        if not sensing_info.moving_forward and self.collision_count == 0:
+        if not sensing_info.moving_forward and self.collision_count == 0 and sensing_info.speed > 0:
             self.set_steering = -1.0
 
         car_controls.steering = self.set_steering
@@ -151,6 +152,7 @@ class DrivingClient(DrivingController):
 
         #print("steering:{}, throttle:{}, brake:{}".format(car_controls.steering, car_controls.throttle, car_controls.brake))
         #print(sensing_info.track_forward_angles)
+        #print(np.max(sensing_info.track_forward_angles))
         #print(np.std(sensing_info.track_forward_angles))
         #print(sensing_info.speed)
         #print(sensing_info.track_forward_obstacles)
@@ -226,11 +228,13 @@ class DrivingClient(DrivingController):
                 break
 
         self.is_like_rect = False
+        ang_diffs = []
 
         for i in range(1, 10):
-            if abs(sensing_info.track_forward_angles[i] - sensing_info.track_forward_angles[i-1]) > 30:
+            ang_diff = abs(sensing_info.track_forward_angles[i] - sensing_info.track_forward_angles[i-1])
+            ang_diffs.append(ang_diff)
+            if ang_diff > 30:
                 self.is_like_rect = True
-                break
 
         self.full_throttling = full_throttle
         self.emergency_braking = emergency_brake
@@ -249,6 +253,7 @@ class DrivingClient(DrivingController):
             else:
                 self.steering_by_middle = ((sensing_info.to_middle+(self.half_road_limit/5)) / 50) * -1
             """
+
             if np.std(sensing_info.track_forward_angles) > 28 and 90 > np.max(absolute_angles) and sensing_info.speed > 30:
                 self.marina_emergency = True
                 self.set_brake = 1.0
@@ -273,10 +278,16 @@ class DrivingClient(DrivingController):
                 else:
                     self.steering_by_angle = self.steering_by_angle - 0.3
 
-        if self.is_like_rect and (not emergency_brake):
+        ang_diffs_std = np.std(ang_diffs)
+        #print(ang_diffs_std)
+        if self.is_like_rect and (not emergency_brake) and ((120 > np.max(absolute_angles) > 84 and ang_diffs_std > 9.5) or ang_diffs_std > 13):
             print("is lect")
             print(sensing_info.track_forward_angles)
-            if sensing_info.speed > 90:
+            print(np.std(ang_diffs))
+            if sensing_info.speed > 120:
+                self.set_brake = 1.0
+                self.set_throttle = 0.0
+            elif sensing_info.speed > 90:
                 self.set_brake = 1.0
                 self.set_throttle = 0.2
 
@@ -292,12 +303,13 @@ class DrivingClient(DrivingController):
         if abs(diff) < 4 or abs(obs_to_mid) < 2:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
             print("target to be selected")
+            """
             for i in range(2):
                 if abs(to_be_target[i]) > (self.half_road_limit-1.25):
                     target = to_be_target[1-i]
                     target_selected = True
                     break
-            
+            """
             if not target_selected:
                 if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 5:
                     opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
@@ -307,7 +319,7 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
-
+            """
             if not target_selected:
                 if len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
                     if abs(to_be_target[0] - sensing_info.track_forward_obstacles[1]['to_middle']) < abs(to_be_target[1] - sensing_info.track_forward_obstacles[1]['to_middle']):
@@ -316,7 +328,7 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
-
+            """
             if not target_selected:
                 if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
                     target = to_be_target[0]
