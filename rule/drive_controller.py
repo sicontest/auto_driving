@@ -199,7 +199,7 @@ class DrivingController():
     def getJosnfile(self):
         path = airsim.CarClient().getAlgoUserAPI().settings_path
         if path == "":
-            path = "C:\\Users\\SDS\\Documents\\AirSim\\settings.json"
+            path = "C:\\Users\\AirSim\\settings.json"
         with open(path) as json_file:
             return json.load(json_file)
 
