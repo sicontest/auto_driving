@@ -459,10 +459,10 @@ class DrivingClient(DrivingController):
 
             if obs_dist < 10.0:
                 if abs(car_obs_angle) < 30.0 and obs_foward_angle < 0.5:
-                    if target > 0:
-                        target = 25.0
+                    if sensing_info.moving_angle > 0:
+                        target = 15.0
                     else:
-                        target = -25.0
+                        target = -15.0
                 print("6---")
             else:
                 if abs(car_obs_angle) < 10.0 and obs_foward_angle < 0.5:
