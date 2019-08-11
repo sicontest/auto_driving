@@ -464,18 +464,14 @@ class DrivingClient(DrivingController):
                 print(obs_foward_angle)
                 if abs(car_obs_angle) < 30.0 and obs_foward_angle < 1.1:
                     if sensing_info.moving_angle > 0:
-                        target = -15.0
+                        target = -20.0
                     else:
-                        target = 15.0
+                        target = 20.0
                     print("6---")
             else:
-                if abs(car_obs_angle) < 10.0 and obs_foward_angle < 0.5:
-                    if obs_dist > 10.0:
-                        target *= 2.0
-                        print("4---")
-                    else:
-                        target *= 5.0
-                        print("5---")
+                if abs(car_obs_angle) < 10.0 and obs_foward_angle < 1.1: # 스머프 검증 필요
+                    target *= 5.0
+                    print("5---")
                     if target > 13.0:
                         target = 13.0
                     elif target < -13.0:
