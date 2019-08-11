@@ -74,10 +74,10 @@ class DrivingClient(DrivingController):
 
         self.set_steering_with_no_obstacles(sensing_info)
 
-        if not self.full_throttling:
-            dist = 60
+        if sensing_info.speed > 120:
+            dist = 80
         else:
-            dist = 90
+            dist = 50
         if len(sensing_info.track_forward_obstacles) > 0 and sensing_info.track_forward_obstacles[0]['dist'] < dist:
             self.set_steering_with_obstacles(sensing_info)
 
@@ -107,11 +107,11 @@ class DrivingClient(DrivingController):
             self.is_opponent_close = False
 
         if sensing_info.collided and self.collision_count == 0 and (not self.is_opponent_close or sensing_info.speed < 10):
-            self.collision_count = 6
+            self.collision_count = 5
             self.before_collision_throttle *= -1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
-            if self.before_collision_throttle < 0:
+            if sensing_info.to_middle > 0:
                 if sensing_info.moving_angle > 0:
                     self.set_steering = 0.8
                 else:
@@ -125,7 +125,7 @@ class DrivingClient(DrivingController):
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
-            if self.before_collision_throttle < 0:
+            if sensing_info.to_middle > 0:
                 if sensing_info.moving_angle > 0:
                     self.set_steering = 0.8
                 else:
@@ -253,7 +253,7 @@ class DrivingClient(DrivingController):
             if sensing_info.speed > 130:
                 self.set_throttle = 0.5
             if sensing_info.speed > 120:
-                self.set_throttle = 0.3
+                self.set_brake = 0.3
             """
             if np.max(sensing_info.track_forward_angles) > 50:
                 self.steering_by_middle = ((sensing_info.to_middle-(self.half_road_limit/5)) / 50) * -1
@@ -271,9 +271,8 @@ class DrivingClient(DrivingController):
                     self.steering_by_angle = self.steering_by_angle - 0.1
             """
         if emergency_brake:
-            self.set_throttle = 0.7
             if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 30:
-                self.set_brake = 0.3
+                self.set_brake = 0.6
                 """
                 if is_emergency_direction_right:
                     self.steering_by_angle += (((self.half_road_limit / 2) / 20) * -1)
@@ -313,13 +312,13 @@ class DrivingClient(DrivingController):
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
 
             #print("target to be selected")
-            
+            """
             for i in range(2):
                 if abs(to_be_target[i]) > (self.half_road_limit-1.25):
                     target = to_be_target[1-i]
                     target_selected = True
                     break
-            
+            """
             if not target_selected:
                 if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 5:
                     opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
@@ -348,7 +347,7 @@ class DrivingClient(DrivingController):
                     target = to_be_target[1]
                     target_selected = True
 
-        elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 60:
+        elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
             second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
             if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
                 #print("obstacles > 1 and obs_dist < 30")
@@ -409,7 +408,6 @@ class DrivingClient(DrivingController):
                 to_obs_angle = np.std(sensing_info.track_forward_angles[0:2])
             elif obs_dist < 40:
                 to_obs_angle = np.std(sensing_info.track_forward_angles[0:3])
-
             if len(sensing_info.track_forward_obstacles) > 0:
                 check_car_moving_angle = 5
             else:
@@ -423,7 +421,7 @@ class DrivingClient(DrivingController):
                     target *= 1.3
                     #print("5---")
             """
-            car_obs_angle = 90.0 - (math.atan(obs_dist / abs(diff)) * 180 / math.pi)
+            car_obs_angle = math.atan(abs(diff) / obs_dist) * 180 / math.pi
             if diff < 0:
                 car_obs_angle *= -1.0
             """
@@ -451,13 +449,19 @@ class DrivingClient(DrivingController):
             print(car_obs_angle)
             print("obs_foward_angle : ")
             print(obs_foward_angle)
-            if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
-                if sensing_info.speed < 50:
-                    target *= 7.0 #10.0
-                    #print("4---")
-                else:
-                    target *= 3.0 #4.0
-                    #print("5---")
+            print("obs_dist : ")
+            print(obs_dist)
+            if obs_dist < 5.0:
+                if abs(car_obs_angle) < 30.0 and obs_foward_angle < 0.5:
+                    target *= 20.0
+            else:
+                if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
+                    if obs_dist > 10.0:
+                        target *= 2.0
+                        print("4---")
+                    else:
+                        target *= 5.0
+                        print("5---")
 
         elif sensing_info.speed > 120:
             #print("6---")
@@ -490,7 +494,6 @@ class DrivingClient(DrivingController):
                         self.set_throttle = 0.7
                         if sensing_info.speed > 80:
                             self.set_brake = 0.2
-
                         if before_obs_angle > 0:
                             if to_middle > 0:
                                 to_middle = -1.5  # 오른쪽으로 코너링
@@ -516,7 +519,6 @@ class DrivingClient(DrivingController):
                     val = -1.0 if diff > 0 else 1.0
                 else:
                     val = -2.0 if diff > 0 else 2.0
-
         else:  # 현재 주행상 부딪히지 않으면서
             # print("222222222")
             temp = int(sensing_info.track_forward_obstacles[0]['dist'] / 10)
@@ -532,7 +534,6 @@ class DrivingClient(DrivingController):
                     self.set_throttle = 0.7
                     if sensing_info.speed > 80:
                         self.set_brake = 0.2
-
                     if before_obs_angle > 0:
                         if to_middle > 0:
                             to_middle = -1.5  # 오른쪽으로 코너링
@@ -547,7 +548,6 @@ class DrivingClient(DrivingController):
                         else:
                             to_middle = 1.5  # 왼쪽으로 코너링
                             # print("4")
-
             if abs(obs_to_mid) > 3.0:  # 장애물의 위치가 중앙이 아닌 경우에만 감속
                 # print("주행 경로 아님, 장애물 중앙 아님")
                 if not self.full_throttling:
@@ -563,7 +563,6 @@ class DrivingClient(DrivingController):
                     if sensing_info.speed > 50:
                         self.set_brake = 1
                         self.set_throttle = 0
-
         # 두번째 장애물이 중간에 위치하며, 차량도 중간을 달리고있을때
         if len(sensing_info.track_forward_obstacles) > 1:
             second_to_middle = sensing_info.to_middle
@@ -576,7 +575,6 @@ class DrivingClient(DrivingController):
                     to_middle = -3.0
                 else:
                     to_middle = 3.0
-
         if sensing_info.speed > 90 and abs(diff) < 2 and obs_dist < 30:
             # print("5555555555555555")
             # val *= 2.8
@@ -585,10 +583,8 @@ class DrivingClient(DrivingController):
             self.set_throttle = 0.5
         elif sensing_info.speed > 75:
             val *= 1.7
-
         to_middle += val
         
-
         self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle), 4)
         self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
         """
