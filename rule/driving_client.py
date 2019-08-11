@@ -309,6 +309,9 @@ class DrivingClient(DrivingController):
         target_selected = False
         target = 0.0
 
+        #if len(sensing_info.track_forward_obstacles) > 1:
+            #print(sensing_info.track_forward_obstacles[1]['dist'] - obs_dist)
+
         if abs(diff) < 4 or abs(obs_to_mid) < 2:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
 
@@ -351,7 +354,6 @@ class DrivingClient(DrivingController):
         elif len(sensing_info.track_forward_obstacles) > 1 and ((sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30 or sensing_info.track_forward_obstacles[1]['dist'] < 60):
             second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
             if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
-                #print("obstacles > 1 and obs_dist < 30")
                 to_be_target = [second_obs_tomiddle - 5, second_obs_tomiddle + 5]
 
                 for i in range(2):
@@ -481,31 +483,41 @@ class DrivingClient(DrivingController):
                 obs_foward_angle = sensing_info.track_forward_angles[0]
 
             car_obs_angle -= sensing_info.moving_angle
+            """
             print("car_obs_angle : ")
             print(car_obs_angle)
             print("obs_foward_angle : ")
             print(obs_foward_angle)
             print("obs_dist : ")
             print(obs_dist)
-            if obs_dist < 5.0:
-                if abs(car_obs_angle) < 30.0 and obs_foward_angle < 0.5:
-                    target *= 20.0
-            else:
-                if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
-                    if obs_dist > 10.0:
-                        target *= 2.0
-                        print("4---")
+            """
+
+            if obs_dist < 10.0:
+                print("car_obs_angle : ")
+                print(car_obs_angle)
+                print("obs_foward_angle : ")
+                print(obs_foward_angle)
+                if abs(car_obs_angle) < 30.0 and obs_foward_angle < 1.1:
+                    if sensing_info.moving_angle > 0:
+                        target = -20.0
                     else:
-                        target *= 5.0
-                        print("5---")
+                        target = 20.0
+                    print("6---")
+            else:
+                if abs(car_obs_angle) < 10.0 and obs_foward_angle < 1.1: # 스머프 검증 필요
+                    target *= 5.0
+                    print("5---")
+                    if target > 13.0:
+                        target = 13.0
+                    elif target < -13.0:
+                        target = -13.0
 
         elif sensing_info.speed > 120:
             #print("6---")
             target *= 0.7
 
-
+        print("Target!! : {}".format(target))
         if target_selected:
-            #print("Target!! : {}".format(target))
             self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle - target), 4)
             self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
 
