@@ -329,16 +329,16 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
-            """
+            
             if not target_selected:
-                if len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
-                    if abs(to_be_target[0] - sensing_info.track_forward_obstacles[1]['to_middle']) < abs(to_be_target[1] - sensing_info.track_forward_obstacles[1]['to_middle']):
-                        target = to_be_target[0]
-                        target_selected = True
-                    else:
+                if len(sensing_info.track_forward_obstacles) > 1 and 30 >(sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) > 10 and (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) < 5.7:
+                    if (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) * (to_be_target[0] - obs_to_mid) > 0:
                         target = to_be_target[1]
                         target_selected = True
-            """
+                    elif (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) * (to_be_target[0] - obs_to_mid) < 0:
+                        target = to_be_target[0]
+                        target_selected = True
+            
 
             if not target_selected:
                 if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
@@ -348,7 +348,7 @@ class DrivingClient(DrivingController):
                     target = to_be_target[1]
                     target_selected = True
 
-        elif len(sensing_info.track_forward_obstacles) > 1 and (sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30:
+        elif len(sensing_info.track_forward_obstacles) > 1 and ((sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) < 30 or sensing_info.track_forward_obstacles[1]['dist'] < 60):
             second_obs_tomiddle = sensing_info.track_forward_obstacles[1]['to_middle']
             if abs(second_obs_tomiddle - sensing_info.to_middle) < 4:
                 #print("obstacles > 1 and obs_dist < 30")
@@ -382,7 +382,42 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
+        
+        elif len(sensing_info.track_forward_obstacles) > 2 and ((sensing_info.track_forward_obstacles[2]['dist'] - obs_dist) < 40 or sensing_info.track_forward_obstacles[2]['dist'] < 60):
+            third_obs_tomiddle = sensing_info.track_forward_obstacles[2]['to_middle']
+            if abs(third_obs_tomiddle - sensing_info.to_middle) < 4:
+                #print("obstacles > 1 and obs_dist < 30")
+                to_be_target = [third_obs_tomiddle - 5, third_obs_tomiddle + 5]
 
+                for i in range(2):
+                    if abs(to_be_target[i]) > (self.half_road_limit - 1.25):
+                        target = to_be_target[1 - i]
+                        target_selected = True
+                        break
+                    if (to_be_target[i] - third_obs_tomiddle) * (sensing_info.track_forward_obstacles[0]['to_middle'] - third_obs_tomiddle) > 0:
+                        if abs((to_be_target[i] - third_obs_tomiddle)) > abs(sensing_info.track_forward_obstacles[0]['to_middle'] - third_obs_tomiddle):
+                            target = to_be_target[1 - i]
+                            target_selected = True
+                            break
+
+                if not target_selected:
+                    if len(sensing_info.opponent_cars_info) > 0 and sensing_info.opponent_cars_info[0]['dist'] < 5:
+                        opponent_tomiddle = sensing_info.opponent_cars_info[0]['to_middle']
+                        if abs(to_be_target[0] - opponent_tomiddle) < abs(to_be_target[1] - opponent_tomiddle):
+                            target = to_be_target[0]
+                            target_selected = True
+                        else:
+                            target = to_be_target[1]
+                            target_selected = True
+
+                if not target_selected:
+                    if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
+                        target = to_be_target[0]
+                        target_selected = True
+                    else:
+                        target = to_be_target[1]
+                        target_selected = True
+        
 
 
         if obs_dist < 40 and abs(obs_to_mid - to_middle) < 2.5:
