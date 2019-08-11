@@ -422,7 +422,7 @@ class DrivingClient(DrivingController):
                     target *= 1.3
                     #print("5---")
             """
-            car_obs_angle = 90.0 - (math.atan(obs_dist / abs(diff)) * 180 / math.pi)
+            car_obs_angle = math.atan(abs(diff) / obs_dist) * 180 / math.pi
             if diff < 0:
                 car_obs_angle *= -1.0
             """
@@ -450,13 +450,19 @@ class DrivingClient(DrivingController):
             print(car_obs_angle)
             print("obs_foward_angle : ")
             print(obs_foward_angle)
-            if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
-                if sensing_info.speed < 50:
-                    target *= 10.0
-                    #print("4---")
-                else:
-                    target *= 4.0
-                    #print("5---")
+            print("obs_dist : ")
+            print(obs_dist)
+            if obs_dist < 5.0:
+                if abs(car_obs_angle) < 30.0 and obs_foward_angle < 0.5:
+                    target *= 20.0
+            else:
+                if abs(car_obs_angle) < 5.0 and obs_foward_angle < 0.5:
+                    if obs_dist > 10.0:
+                        target *= 2.0
+                        print("4---")
+                    else:
+                        target *= 5.0
+                        print("5---")
 
         elif sensing_info.speed > 120:
             #print("6---")
