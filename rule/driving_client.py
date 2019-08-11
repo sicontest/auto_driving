@@ -107,11 +107,11 @@ class DrivingClient(DrivingController):
             self.is_opponent_close = False
 
         if sensing_info.collided and self.collision_count == 0 and (not self.is_opponent_close or sensing_info.speed < 10):
-            self.collision_count = 5
+            self.collision_count = 6
             self.before_collision_throttle *= -1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
-            if sensing_info.to_middle > 0:
+            if self.before_collision_throttle < 0:
                 if sensing_info.moving_angle > 0:
                     self.set_steering = 0.8
                 else:
@@ -271,8 +271,9 @@ class DrivingClient(DrivingController):
                     self.steering_by_angle = self.steering_by_angle - 0.1
             """
         if emergency_brake:
+            self.set_throttle = 0.7
             if np.std(sensing_info.track_forward_angles) > 25 and sensing_info.speed > 30:
-                self.set_brake = 0.6
+                self.set_brake = 0.3
                 """
                 if is_emergency_direction_right:
                     self.steering_by_angle += (((self.half_road_limit / 2) / 20) * -1)
