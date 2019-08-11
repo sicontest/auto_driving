@@ -83,7 +83,7 @@ class DrivingClient(DrivingController):
 
         self.set_steering = self.steering_by_angle + self.steering_by_middle
 
-        if abs(sensing_info.to_middle) > (self.half_road_limit - 2):
+        if abs(sensing_info.to_middle) > (self.half_road_limit - 3):
             if self.set_steering > 0:
                 if sensing_info.to_middle < 0:
                     self.set_steering += 0.1
