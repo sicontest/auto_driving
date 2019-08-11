@@ -125,7 +125,7 @@ class DrivingClient(DrivingController):
             self.collision_count -= 1
             self.set_throttle = self.before_collision_throttle
             self.set_brake = 0.0
-            if sensing_info.to_middle > 0:
+            if self.before_collision_throttle < 0:
                 if sensing_info.moving_angle > 0:
                     self.set_steering = 0.8
                 else:
