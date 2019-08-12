@@ -312,7 +312,7 @@ class DrivingClient(DrivingController):
         #if len(sensing_info.track_forward_obstacles) > 1:
             #print(sensing_info.track_forward_obstacles[1]['dist'] - obs_dist)
 
-        if abs(diff) < 4 or abs(obs_to_mid) < 2:
+        if abs(diff) < 4 or abs(obs_to_mid) < 3.5:
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
 
             #print("target to be selected")
@@ -332,7 +332,7 @@ class DrivingClient(DrivingController):
                     else:
                         target = to_be_target[1]
                         target_selected = True
-            
+            """
             if not target_selected:
                 if len(sensing_info.track_forward_obstacles) > 1 and 30 >(sensing_info.track_forward_obstacles[1]['dist'] - obs_dist) > 10 and (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) < 5.7:
                     if (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) * (to_be_target[0] - obs_to_mid) > 0:
@@ -341,7 +341,7 @@ class DrivingClient(DrivingController):
                     elif (sensing_info.track_forward_obstacles[1]['to_middle'] - obs_to_mid) * (to_be_target[0] - obs_to_mid) < 0:
                         target = to_be_target[0]
                         target_selected = True
-            
+            """
 
             if not target_selected:
                 if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
@@ -422,7 +422,7 @@ class DrivingClient(DrivingController):
         
 
 
-        if obs_dist < 40 and abs(obs_to_mid - to_middle) < 2.5:
+        if obs_dist < 40 and abs(obs_to_mid - to_middle) < 3.5:
             """
             if sensing_info.speed > 70:
                 #print("2---")
@@ -433,7 +433,7 @@ class DrivingClient(DrivingController):
                 self.set_brake = 1.0
                 self.set_throttle = 0.5
             """
-            if sensing_info.speed > 70:
+            if abs(obs_to_mid - to_middle) < 2.5 and sensing_info.speed > 70:
                 #print("2---")
                 self.set_throttle = 0.0
             """
@@ -482,7 +482,7 @@ class DrivingClient(DrivingController):
             else:
                 obs_foward_angle = sensing_info.track_forward_angles[0]
 
-            car_obs_angle -= sensing_info.moving_angle
+            #car_obs_angle -= sensing_info.moving_angle
             """
             print("car_obs_angle : ")
             print(car_obs_angle)
@@ -493,19 +493,19 @@ class DrivingClient(DrivingController):
             """
 
             if obs_dist < 10.0:
-                print("car_obs_angle : ")
-                print(car_obs_angle)
-                print("obs_foward_angle : ")
-                print(obs_foward_angle)
+                #print("car_obs_angle : ")
+                #print(car_obs_angle)
+                #print("obs_foward_angle : ")
+                #print(obs_foward_angle)
                 if abs(car_obs_angle) < 30.0 and obs_foward_angle < 1.1:
-                    if sensing_info.moving_angle > 0:
+                    if diff < 0:
                         target = -20.0
                     else:
                         target = 20.0
                     print("6---")
             else:
                 if abs(car_obs_angle) < 10.0 and obs_foward_angle < 1.1: # 스머프 검증 필요
-                    target *= 5.0
+                    target *= 2.0
                     print("5---")
                     if target > 13.0:
                         target = 13.0
