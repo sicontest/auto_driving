@@ -312,7 +312,7 @@ class DrivingClient(DrivingController):
         #if len(sensing_info.track_forward_obstacles) > 1:
             #print(sensing_info.track_forward_obstacles[1]['dist'] - obs_dist)
 
-        if abs(diff) < 4 or abs(obs_to_mid) < 2.0:
+        if abs(diff) < 4 or (abs(obs_to_mid) < 3.5 and obs_to_mid != -2.51 and obs_to_mid != 2.99):
             to_be_target = [obs_to_mid-5, obs_to_mid+5]
 
             #print("target to be selected")
@@ -505,7 +505,7 @@ class DrivingClient(DrivingController):
                     print("6---")
             else:
                 if abs(car_obs_angle) < 10.0 and obs_foward_angle < 1.1: # 스머프 검증 필요
-                    target *= 1.4
+                    target *= 1.6
                     print("5---")
                     if target > 13.0:
                         target = 13.0
