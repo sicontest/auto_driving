@@ -430,7 +430,7 @@ class DrivingClient(DrivingController):
                         target = to_be_target[1]
                         target_selected = True
 
-        if obs_dist < 35 and abs(obs_to_mid - to_middle) < 3.5:
+        if obs_dist < 40 and abs(obs_to_mid - to_middle) < 3.0 and obs_to_mid != -2.51 and obs_to_mid != -4.37 and obs_to_mid != 6.07 and obs_to_mid != 3.7:
             """
             if sensing_info.speed > 70:
                 #print("2---")
@@ -492,7 +492,7 @@ class DrivingClient(DrivingController):
             else:
                 obs_foward_angle = sensing_info.track_forward_angles[0]
 
-            # car_obs_angle -= sensing_info.moving_angle
+            car_obs_angle -= sensing_info.moving_angle
             """
             print("car_obs_angle : ")
             print(car_obs_angle)
@@ -523,13 +523,13 @@ class DrivingClient(DrivingController):
                         target = -13.0
 
             if (obs_to_mid == 2.99 or obs_to_mid == 2.75 or obs_to_mid == -2.3) and abs(to_middle) < 4:
-                target *= 1.6
+                target *= 1.2
 
         elif sensing_info.speed > 120:
             # print("6---")
             target *= 0.7
 
-        print("Target!! : {}".format(target))
+        #print("Target!! : {}".format(target))
         if target_selected:
             self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle - target), 4)
             self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
