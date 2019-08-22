@@ -421,7 +421,6 @@ class DrivingClient(DrivingController):
                         else:
                             target = to_be_target[0]
                             target_selected = True
-
                 if not target_selected:
                     if abs(to_be_target[0] - to_middle) < abs(to_be_target[1] - to_middle):
                         target = to_be_target[0]
@@ -431,58 +430,17 @@ class DrivingClient(DrivingController):
                         target_selected = True
 
         if obs_dist < 40 and abs(obs_to_mid - to_middle) < 3.0 and obs_to_mid != -2.51 and obs_to_mid != -4.37 and obs_to_mid != 6.07 and obs_to_mid != 3.7:
-            """
-            if sensing_info.speed > 70:
-                #print("2---")
-                self.set_brake = 0.5
-            if sensing_info.speed > 120:
-                print("3---")
-                #target *= 1.5
-                self.set_brake = 1.0
-                self.set_throttle = 0.5
-            """
+
             if abs(obs_to_mid - to_middle) < 2.5 and sensing_info.speed > 70:
                 # print("2---")
                 self.set_throttle = 0.0
-            """
-            to_obs_angle = 0.0
-            if obs_dist < 10:
-                to_obs_angle = sensing_info.track_forward_angles[0]
-            elif obs_dist < 20:
-                to_obs_angle = np.std(sensing_info.track_forward_angles[0:1])
-            elif obs_dist < 30:
-                to_obs_angle = np.std(sensing_info.track_forward_angles[0:2])
-            elif obs_dist < 40:
-                to_obs_angle = np.std(sensing_info.track_forward_angles[0:3])
-            if len(sensing_info.track_forward_obstacles) > 0:
-                check_car_moving_angle = 5
-            else:
-                check_car_moving_angle = 3
 
-            if abs(sensing_info.moving_angle) < check_car_moving_angle and to_obs_angle < 3:
-                if sensing_info.speed < 50:
-                    target *= 1.5
-                    #print("4---")
-                else:
-                    target *= 1.3
-                    #print("5---")
-            """
             car_obs_angle = 0
             if obs_dist > 0:
                 car_obs_angle = math.atan(abs(diff) / obs_dist) * 180 / math.pi
             if diff < 0:
                 car_obs_angle *= -1.0
-            """
-            print("obs dist : ")
-            print(sensing_info.track_forward_obstacles[0]['dist'])
-            if len(sensing_info.track_forward_obstacles) > 1:
-                print("obs2 dist : ")
-                print(sensing_info.track_forward_obstacles[1]['dist'])
-            print("temp : ")
-            print(temp)
-            print("moving_angle : ")
-            print(sensing_info.moving_angle)
-            """
+
             forward_angle_cnt = sensing_info.track_forward_obstacles[0]['dist']
             forward_angle_cnt /= 10.0
             forward_angle_cnt = int(forward_angle_cnt)
@@ -493,161 +451,30 @@ class DrivingClient(DrivingController):
                 obs_foward_angle = sensing_info.track_forward_angles[0]
 
             car_obs_angle -= sensing_info.moving_angle
-            """
-            print("car_obs_angle : ")
-            print(car_obs_angle)
-            print("obs_foward_angle : ")
-            print(obs_foward_angle)
-            print("obs_dist : ")
-            print(obs_dist)
-            """
 
             if obs_dist < 10.0:
-                # print("car_obs_angle : ")
-                # print(car_obs_angle)
-                # print("obs_foward_angle : ")
-                # print(obs_foward_angle)
                 if abs(car_obs_angle) < 30.0 and obs_foward_angle < 1.1:
                     if diff < 0:
                         target = -20.0
                     else:
                         target = 20.0
-                    print("6---")
             else:
                 if abs(car_obs_angle) < 10.0 and obs_foward_angle < 1.1:
                     target *= 1.6
-                    print("5---")
                     if target > 13.0:
                         target = 13.0
                     elif target < -13.0:
                         target = -13.0
 
-            if (obs_to_mid == 2.99 or obs_to_mid == 2.75 or obs_to_mid == -2.3) and abs(to_middle) < 4:
+            if (obs_to_mid == 2.99 or obs_to_mid == -2.3) and abs(to_middle) < 4:
                 target *= 1.2
 
         elif sensing_info.speed > 120:
-            # print("6---")
-            target *= 0.7
+            target *= 0.7			
 
-        #print("Target!! : {}".format(target))
         if target_selected:
             self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle - target), 4)
             self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
-
-        """
-        val = 0
-        if abs(diff) < 3.5:
-            # print("111111111111")
-            if abs(obs_to_mid) < 1.5:
-                # print("1111111111")
-                temp = int(sensing_info.track_forward_obstacles[0]['dist'] / 10)
-                temp2 = int(sensing_info.track_forward_obstacles[0]['dist'] % 10)
-                # temp3 = 1 if temp2 > 5 else 0
-                count = temp + temp2
-                temp4 = False
-                if count > 0:
-                    temp4 = True
-                    before_obs_angle = np.mean(sensing_info.track_forward_angles[2:count])
-                if temp4:
-                    if abs(before_obs_angle) > 50:  # and obs_dist > 10:, 왜 obs_dist 조건을 걸었던건지 이해가 안된다 ㅠㅠ # 코너링 중임
-                        # print("333333333333")
-                        self.set_throttle = 0.7
-                        if sensing_info.speed > 80:
-                            self.set_brake = 0.2
-                        if before_obs_angle > 0:
-                            if to_middle > 0:
-                                to_middle = -1.5  # 오른쪽으로 코너링
-                                # print("1")
-                            else:
-                                to_middle = 2.0  # 왼쪽으로 코너링
-                                # print("2")
-                        else:
-                            if to_middle > 0:
-                                to_middle = -2.0  # 오른쪽으로 코너링
-                                # print("3")
-                            else:
-                                to_middle = 1.5  # 왼쪽으로 코너링
-                                # print("4")
-                    else:
-                        if to_middle > 0:
-                            to_middle = -1.0
-                        else:
-                            to_middle = 1.0
-            else:
-                # print("44444444444444")
-                if sensing_info.track_forward_obstacles[0]['dist'] > 20:
-                    val = -1.0 if diff > 0 else 1.0
-                else:
-                    val = -2.0 if diff > 0 else 2.0
-        else:  # 현재 주행상 부딪히지 않으면서
-            # print("222222222")
-            temp = int(sensing_info.track_forward_obstacles[0]['dist'] / 10)
-            temp2 = int(sensing_info.track_forward_obstacles[0]['dist'] % 10)
-            # temp3 = 1 if temp2 > 5 else 0
-            count = temp + temp2
-            temp4 = False
-            if count > 0:
-                temp4 = True
-                before_obs_angle = np.mean(sensing_info.track_forward_angles[2:count])
-            if temp4:
-                if abs(before_obs_angle) > 50:  # 코너링 중임
-                    self.set_throttle = 0.7
-                    if sensing_info.speed > 80:
-                        self.set_brake = 0.2
-                    if before_obs_angle > 0:
-                        if to_middle > 0:
-                            to_middle = -1.5  # 오른쪽으로 코너링
-                            # print("1")
-                        else:
-                            to_middle = 2.0  # 왼쪽으로 코너링
-                            # print("2")
-                    else:
-                        if to_middle > 0:
-                            to_middle = -2.0  # 오른쪽으로 코너링
-                            # print("3")
-                        else:
-                            to_middle = 1.5  # 왼쪽으로 코너링
-                            # print("4")
-            if abs(obs_to_mid) > 3.0:  # 장애물의 위치가 중앙이 아닌 경우에만 감속
-                # print("주행 경로 아님, 장애물 중앙 아님")
-                if not self.full_throttling:
-                    # print(obs_dist)
-                    if sensing_info.speed > 60:
-                        self.set_throttle = 0
-                        # print("1")
-                    if sensing_info.speed > 50:
-                        self.set_brake = 1
-                        # print("2")
-                elif self.emergency_braking:
-                    # print("3")
-                    if sensing_info.speed > 50:
-                        self.set_brake = 1
-                        self.set_throttle = 0
-        # 두번째 장애물이 중간에 위치하며, 차량도 중간을 달리고있을때
-        if len(sensing_info.track_forward_obstacles) > 1:
-            second_to_middle = sensing_info.to_middle
-            second_obs_to_mid = sensing_info.track_forward_obstacles[1]['to_middle']
-            second_diff = (second_to_middle - second_obs_to_mid)
-            second_obs_dist = sensing_info.track_forward_obstacles[1]['dist'] - sensing_info.track_forward_obstacles[0]['dist']
-            if abs(second_diff) < 3.5 and abs(second_obs_to_mid) < 1.5 and second_obs_dist < 30:
-                # print("111")
-                if second_to_middle > 0:
-                    to_middle = -3.0
-                else:
-                    to_middle = 3.0
-        if sensing_info.speed > 90 and abs(diff) < 2 and obs_dist < 30:
-            # print("5555555555555555")
-            # val *= 2.8
-            # if val != 0 and obs_dist < 30:
-            self.set_brake = 0.7
-            self.set_throttle = 0.5
-        elif sensing_info.speed > 75:
-            val *= 1.7
-        to_middle += val
-
-        self.steering_by_middle = round(self.steer_val_by_to_middle(to_middle), 4)
-        self.steering_by_angle = round(self.steer_by_forward_road(sensing_info), 4)
-        """
 
     def steer_by_forward_road(self, sensing_info):
         return (sensing_info.track_forward_angles[0] - sensing_info.moving_angle) / 60
